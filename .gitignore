@@ -1,0 +1,13 @@
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

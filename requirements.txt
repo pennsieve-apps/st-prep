@@ -1,0 +1,10 @@
+# Direct dependencies (resolved on python:3.12-slim-bookworm, linux/amd64; transitive pins below)
+scanpy==1.12.5
+anndata==0.13.4
+numpy==2.5.4
+scipy==1.18.1
+pandas==3.1.0
+h5py==3.16.0
+pyarrow==26.0.0
+pillow==13.0.0
+zarr==3.4.2
