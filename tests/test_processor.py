@@ -75,7 +75,7 @@ def test_run_writes_every_sample(outputs, layout):
     assert by_id["visium3"]["n_obs"] == "21"                        # MTX folder layout, filtered matrix preferred
 
     prep = json.loads((out / "metadata" / "prep.json").read_text())
-    assert prep["app"] == "st-prep" and prep["appVersion"] == "0.1.0"
+    assert prep["app"] == "st-prep" and prep["appVersion"] == (Path(__file__).resolve().parent.parent / "VERSION").read_text().strip()
     assert [s["sample_id"] for s in prep["skipped"]] == ["ghost"]
     assert "matches no sample" in prep["skipped"][0]["reason"]
     ignored = {i["path"]: i["reason"] for i in prep["ignored"]}
@@ -113,7 +113,7 @@ def check_contract(a: ad.AnnData, sample_id: str) -> None:
         assert key in pen, key
     assert pen["platform"] in I.PLATFORMS and pen["kind"] in ("spot", "bin", "cell")
     assert pen["coordinate_unit"] in ("pixel", "micron") and pen["grid"] in ("hex", "square", "none")
-    assert pen["spot_diameter"] > 0 and pen["prep_version"] == "0.1.0"
+    assert pen["spot_diameter"] > 0 and pen["prep_version"] == (Path(__file__).resolve().parent.parent / "VERSION").read_text().strip()
     assert a.obs["condition"].dtype == "category" and a.obs["batch"].dtype == "category"
 
 
@@ -453,3 +453,18 @@ def test_xenium_prefixed_files_side_by_side(tmp_path, monkeypatch):
     out2 = tmp_path / "out2"
     assert run(flat, out2, monkeypatch) == 0
     assert sorted(p.stem for p in (out2 / "spatial").glob("*.h5ad")) == ["breast_rep1", "breast_rep2"]
+
+
+def test_contract_file_read_again_keeps_ids(outputs, tmp_path, monkeypatch):
+    """A file st-prep wrote, given back as .h5ad input, keeps its platform, grid, images and obs ids."""
+    src = outputs["linked"] / "spatial"
+    sid = next(p.stem for p in sorted(src.glob("*.h5ad")) if ad.read_h5ad(p).uns["pennsieve"]["platform"] == "visium")
+    inp = tmp_path / "in"
+    inp.mkdir()
+    shutil.copy(src / f"{sid}.h5ad", inp / f"{sid}.h5ad")
+    out = tmp_path / "out"
+    assert run(inp, out, monkeypatch) == 0
+    a0, a1 = ad.read_h5ad(src / f"{sid}.h5ad"), ad.read_h5ad(out / "spatial" / f"{sid}.h5ad")
+    assert list(a1.obs_names) == list(a0.obs_names)
+    pen = a1.uns["pennsieve"]
+    assert (pen["platform"], pen["kind"], pen["grid"]) == ("visium", "spot", "hex") and "spatial" in a1.uns

@@ -154,7 +154,10 @@ def finalise(read: Read, sample_id: str, source_rel: str, params: dict, extra: d
     adata.obs["pct_counts_mt"] = adata.obs["pct_counts_mt"].astype(np.float64)
 
     # 5. identities, sheet columns, annotations
-    obs_ids = adata.obs_names.to_numpy()
+    # an AnnData this app wrote before already carries "<sample_id>:" on its names; strip it, so a
+    # contract file read again keeps its ids (and annotations still join on the barcode)
+    pre = f"{sample_id}:"
+    obs_ids = np.array([str(o)[len(pre):] if str(o).startswith(pre) else str(o) for o in adata.obs_names], dtype=object)
     adata.obs_names = pd.Index([f"{sample_id}:{o}" for o in obs_ids])
     adata.obs["sample_id"] = pd.Categorical([sample_id] * adata.n_obs)
     adata.obs["in_tissue"] = adata.obs["in_tissue"].astype(np.int32)
