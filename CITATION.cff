@@ -1,0 +1,233 @@
+cff-version: "1.2.0"
+message: If you use this app, please cite it and the works it builds on, listed under references.
+type: software
+title: Spatial Transcriptomics Prep
+abstract: The first step of the spatial transcriptomics workflows. Detects 10x Visium, Visium HD and
+  Xenium, Vizgen MERSCOPE, NanoString CosMx, AnnData and SpatialData samples in a folder tree and writes
+  one AnnData file per sample in a shared contract (raw counts, spatial coordinates, Visium images and
+  scale factors, QC metrics with scanpy, control-probe counts, sample sheet columns and annotations),
+  plus samples.csv and prep.json.
+authors:
+- name: Pennsieve (University of Pennsylvania)
+repository-code: https://github.com/pennsieve-apps/st-prep
+license: Apache-2.0
+keywords:
+- spatial-transcriptomics
+- transcriptomics
+- visium
+- xenium
+- merscope
+- cosmx
+- anndata
+- preprocessing
+references:
+- type: article
+  title: 'SCANPY: large-scale single-cell gene expression data analysis'
+  authors:
+  - family-names: 'Wolf'
+    given-names: 'F. Alexander'
+  - family-names: 'Angerer'
+    given-names: 'Philipp'
+  - family-names: 'Theis'
+    given-names: 'Fabian J.'
+  year: 2018
+  journal: 'Genome Biology'
+  volume: 19
+  issue: '1'
+  start: '15'
+  doi: 10.1186/s13059-017-1382-0
+  identifiers:
+  - type: other
+    value: 'pmid:29409532'
+    description: PubMed ID
+- type: article
+  title: 'anndata: Access and store annotated data matrices'
+  authors:
+  - family-names: 'Virshup'
+    given-names: 'Isaac'
+  - family-names: 'Rybakov'
+    given-names: 'Sergei'
+  - family-names: 'Theis'
+    given-names: 'Fabian J.'
+  - family-names: 'Angerer'
+    given-names: 'Philipp'
+  - family-names: 'Wolf'
+    given-names: 'F. Alexander'
+  year: 2024
+  journal: 'Journal of Open Source Software'
+  volume: 9
+  issue: '101'
+  start: '4371'
+  doi: 10.21105/joss.04371
+- type: article
+  title: 'SpatialData: an open and universal data framework for spatial omics'
+  authors:
+  - family-names: 'Marconato'
+    given-names: 'Luca'
+  - family-names: 'Palla'
+    given-names: 'Giovanni'
+  - family-names: 'Yamauchi'
+    given-names: 'Kevin A.'
+  - family-names: 'Virshup'
+    given-names: 'Isaac'
+  - family-names: 'Heidari'
+    given-names: 'Elyas'
+  - family-names: 'Treis'
+    given-names: 'Tim'
+  - family-names: 'Vierdag'
+    given-names: 'Wouter-Michiel'
+  - family-names: 'Toth'
+    given-names: 'Marcella'
+  - family-names: 'Stockhaus'
+    given-names: 'Sonja'
+  - family-names: 'Shrestha'
+    given-names: 'Rahul B.'
+  - family-names: 'Rombaut'
+    given-names: 'Benjamin'
+  - family-names: 'Pollaris'
+    given-names: 'Lotte'
+  - family-names: 'Lehner'
+    given-names: 'Laurens'
+  - family-names: 'Vöhringer'
+    given-names: 'Harald'
+  - family-names: 'Kats'
+    given-names: 'Ilia'
+  - family-names: 'Saeys'
+    given-names: 'Yvan'
+  - family-names: 'Saka'
+    given-names: 'Sinem K.'
+  - family-names: 'Huber'
+    given-names: 'Wolfgang'
+  - family-names: 'Gerstung'
+    given-names: 'Moritz'
+  - family-names: 'Moore'
+    given-names: 'Josh'
+  - family-names: 'Theis'
+    given-names: 'Fabian J.'
+  - family-names: 'Stegle'
+    given-names: 'Oliver'
+  year: 2025
+  journal: 'Nature Methods'
+  volume: 22
+  issue: '1'
+  start: '58'
+  end: '62'
+  doi: 10.1038/s41592-024-02212-x
+  identifiers:
+  - type: other
+    value: 'pmid:38509327'
+    description: PubMed ID
+- type: article
+  title: 'Visualization and analysis of gene expression in tissue sections by spatial transcriptomics'
+  authors:
+  - family-names: 'Ståhl'
+    given-names: 'Patrik L.'
+  - family-names: 'Salmén'
+    given-names: 'Fredrik'
+  - family-names: 'Vickovic'
+    given-names: 'Sanja'
+  - family-names: 'Lundmark'
+    given-names: 'Anna'
+  - family-names: 'Navarro'
+    given-names: 'José Fernández'
+  - family-names: 'Magnusson'
+    given-names: 'Jens'
+  - family-names: 'Giacomello'
+    given-names: 'Stefania'
+  - family-names: 'Asp'
+    given-names: 'Michaela'
+  - family-names: 'Westholm'
+    given-names: 'Jakub O.'
+  - family-names: 'Huss'
+    given-names: 'Mikael'
+  - family-names: 'Mollbrink'
+    given-names: 'Annelie'
+  - family-names: 'Linnarsson'
+    given-names: 'Sten'
+  - family-names: 'Codeluppi'
+    given-names: 'Simone'
+  - family-names: 'Borg'
+    given-names: 'Åke'
+  - family-names: 'Pontén'
+    given-names: 'Fredrik'
+  - family-names: 'Costea'
+    given-names: 'Paul Igor'
+  - family-names: 'Sahlén'
+    given-names: 'Pelin'
+  - family-names: 'Mulder'
+    given-names: 'Jan'
+  - family-names: 'Bergmann'
+    given-names: 'Olaf'
+  - family-names: 'Lundeberg'
+    given-names: 'Joakim'
+  - family-names: 'Frisén'
+    given-names: 'Jonas'
+  year: 2016
+  journal: 'Science'
+  volume: 353
+  issue: '6294'
+  start: '78'
+  end: '82'
+  doi: 10.1126/science.aaf2403
+  identifiers:
+  - type: other
+    value: 'pmid:27365449'
+    description: PubMed ID
+- type: article
+  title: 'High resolution mapping of the tumor microenvironment using integrated single-cell, spatial and in situ analysis'
+  authors:
+  - family-names: 'Janesick'
+    given-names: 'Amanda'
+  - family-names: 'Shelansky'
+    given-names: 'Robert'
+  - family-names: 'Gottscho'
+    given-names: 'Andrew D.'
+  - family-names: 'Wagner'
+    given-names: 'Florian'
+  - family-names: 'Williams'
+    given-names: 'Stephen R.'
+  - family-names: 'Rouault'
+    given-names: 'Morgane'
+  - family-names: 'Beliakoff'
+    given-names: 'Ghezal'
+  - family-names: 'Morrison'
+    given-names: 'Carolyn A.'
+  - family-names: 'Oliveira'
+    given-names: 'Michelli F.'
+  - family-names: 'Sicherman'
+    given-names: 'Jordan T.'
+  - family-names: 'Kohlway'
+    given-names: 'Andrew'
+  - family-names: 'Abousoud'
+    given-names: 'Jawad'
+  - family-names: 'Drennon'
+    given-names: 'Tingsheng Yu'
+  - family-names: 'Mohabbat'
+    given-names: 'Seayar H.'
+  - name: '10x Development Teams'
+  - family-names: 'Taylor'
+    given-names: 'Sarah E. B.'
+  year: 2023
+  journal: 'Nature Communications'
+  volume: 14
+  issue: '1'
+  start: '8353'
+  doi: 10.1038/s41467-023-43458-x
+  identifiers:
+  - type: other
+    value: 'pmid:38114474'
+    description: PubMed ID
+- type: data
+  title: '10x Visium Spatial Transcriptomics Dataset: Kidney (3) and Lung (5) Cancer with Tertiary Lymphoid Structures'
+  authors:
+  - family-names: Dawo
+    given-names: Sebastian
+  - family-names: Nonchev
+    given-names: Kalin
+  - family-names: Silina
+    given-names: Karina
+  year: 2025
+  publisher:
+    name: Zenodo
+  doi: 10.5281/zenodo.14620362
+  license: CC-BY-4.0

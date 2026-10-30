@@ -1,0 +1,138 @@
+# yaml-language-server: $schema=https://schemas.pennsieve.io/app-manifest/v1.json
+schemaVersion: "1.0"
+application:
+  name: Spatial Transcriptomics Prep
+  description: >-
+    The first step of every spatial transcriptomics workflow. Finds the samples in a folder tree
+    by their files (10x Visium and Visium HD Space Ranger outputs, 10x Xenium, Vizgen MERSCOPE,
+    NanoString CosMx exports, AnnData .h5ad and SpatialData .zarr) and writes one AnnData file
+    per sample in a single shape the later steps share: raw counts as a sparse matrix, spatial
+    coordinates (full-resolution pixels for Visium, microns for imaging platforms), the H&E
+    images and scale factors for Visium, QC metrics, control-probe counts, the sample sheet's
+    columns and optional per-spot annotations. Only out-of-tissue Visium spots and control
+    features are removed; nothing is normalised. Also writes samples.csv and prep.json (what
+    was read, dropped and ignored per sample).
+  type: processor
+  tags:
+    - spatial-transcriptomics
+    - transcriptomics
+    - genomics
+    - single-cell
+    - visium
+    - visium-hd
+    - xenium
+    - merscope
+    - cosmx
+    - anndata
+    - preprocessing
+runtime:
+  cpu: 2048
+  # Measured in the linux/amd64 image (amd64 emulation on an M-series Mac): 8 Visium samples
+  # ~1.1 GB peak, two Xenium slides (168 k + 119 k cells) ~1.0 GB peak; see README "Runtime".
+  # 8 GiB leaves room for a ~500 k-cell Xenium slide or a Visium HD 8 µm sample.
+  memory: 8192
+  computeTypes:
+    - standard
+  timeoutSeconds: 7200
+parameters:
+  - name: SAMPLE_SHEET
+    type: string
+    label: Sample sheet
+    description: >-
+      File name of the optional sample sheet, looked for anywhere in the input (shallowest wins).
+      CSV with sample_id and path (a folder or file name, or a path relative to the input); every
+      other column (condition, batch, donor, tissue, ...) is copied to samples.csv and onto every
+      observation. When a sheet is present it defines the samples: detected samples it does not
+      list are ignored (and listed in prep.json). Without one, every detected sample is used.
+    defaultValue: samples.csv
+  - name: ANNOTATIONS
+    type: string
+    label: Annotations file
+    description: >-
+      File name of optional per-observation labels (sample_id, obs_id, annotation; obs_id is the
+      barcode or cell id as in the platform's files), joined onto obs["annotation"].
+    defaultValue: annotations.csv
+  - name: PLATFORM
+    type: string
+    label: Platform
+    description: >-
+      auto detects each sample by its files; any other value only looks for that platform.
+    defaultValue: auto
+    validValues: [auto, visium, visium-hd, xenium, merscope, cosmx, h5ad, spatialdata]
+  - name: BIN_SIZE_UM
+    type: integer
+    label: Visium HD bin size (µm)
+    description: >-
+      Which Visium HD binning to read (binned_outputs/square_<NNN>um/). 8 is the usual choice;
+      16 is coarser and smaller. 2 µm bins are out of scope (too large for one-sample-in-memory).
+    defaultValue: 8
+    min: 1
+  - name: KEEP_OUT_OF_TISSUE
+    type: boolean
+    label: Keep out-of-tissue spots
+    description: >-
+      Visium: keep spots marked out of tissue (obs["in_tissue"] = 0) instead of dropping them.
+      Only matters when the matrix holds them (a raw matrix, or an .h5ad that kept them).
+    defaultValue: false
+  - name: MAX_OBS_PER_SAMPLE
+    type: integer
+    label: Maximum observations per sample
+    description: >-
+      Keep at most this many observations per sample: a seeded random subset in source order,
+      for quick test runs. 0 keeps every observation.
+    defaultValue: 0
+    min: 0
+  - name: COSMX_PIXEL_UM
+    type: number
+    label: CosMx pixel size (µm)
+    description: >-
+      Microns per pixel of CosMx global coordinates (CenterX_global_px / CenterY_global_px) and
+      Area; 0.12028 for AtoMx exports (0.18 for some older instruments).
+    defaultValue: 0.12028
+  - name: SEED
+    type: integer
+    label: Seed
+    description: Seed of the MAX_OBS_PER_SAMPLE subsample (combined with the sample_id).
+    defaultValue: 42
+  - name: THREADS
+    type: integer
+    label: Threads
+    description: Threads for numerical libraries; 0 = from the container's CPU quota.
+    defaultValue: 0
+    min: 0
+inputs:
+  - name: spatial
+    description: >-
+      A folder tree of spatial transcriptomics outputs, searched recursively: Space Ranger
+      folders (filtered_feature_bc_matrix.h5 or the filtered_feature_bc_matrix/ MTX folder, with
+      spatial/tissue_positions.csv or tissue_positions_list.csv, scalefactors_json.json and the
+      tissue images), Visium HD (binned_outputs/square_<NNN>um/ with tissue_positions.parquet),
+      Xenium (cell_feature_matrix.h5 + cells.parquet or cells.csv.gz), MERSCOPE (cell_by_gene.csv
+      + cell_metadata.csv), CosMx (*_exprMat_file.csv + *_metadata_file.csv), .h5ad files with
+      obsm["spatial"], SpatialData .zarr stores; plus the optional samples.csv and
+      annotations.csv.
+    placement: root
+    required: true
+outputs:
+  - name: spatial
+    description: >-
+      spatial/<sample_id>.h5ad, one per sample: raw counts in X (CSR, int32), obs_names
+      <sample_id>:<barcode or cell id>, obs (sample_id, x, y, in_tissue, array_row/array_col,
+      total_counts, n_genes_by_counts, pct_counts_mt, cell_area, nucleus_area, control_counts,
+      annotation, sample sheet columns), var (gene symbols, gene_ids, feature_types, mt),
+      obsm["spatial"], uns["spatial"] (Visium images and scale factors), uns["pennsieve"]
+      (platform, kind, coordinate_unit, spot_diameter, grid, source); spatial/provenance.json.
+    formats:
+      - format_3590
+    mediaTypes:
+      - application/x-hdf5
+      - application/json
+  - name: metadata
+    description: >-
+      metadata/samples.csv (sample_id, path, platform, kind, n_obs, n_genes, n_obs_in_tissue and
+      every extra sample sheet column), metadata/prep.json (per sample: platform, files read,
+      features dropped by type with counts, observations dropped, coordinate unit, images,
+      annotation join, warnings; samples skipped; files ignored), metadata/provenance.json.
+    mediaTypes:
+      - text/csv
+      - application/json
