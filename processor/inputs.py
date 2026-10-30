@@ -42,6 +42,7 @@ class Candidate:
     # set when identities are assigned
     sample_id: str = ""
     sheet_row: dict[str, str] | None = None
+    prefix: str = ""                   # file-name prefix of a sample whose files sit next to others
     extra: dict[str, str] = field(default_factory=dict)
 
     def rel(self, root: Path) -> str:
@@ -184,12 +185,28 @@ def detect_folder(folder: Path, dirnames: list[str], filenames: list[str], root:
                             "reason": "10x matrix without a spatial/tissue_positions file"})
             dirnames[:] = [d for d in dirnames if d not in mtx]
 
-    # Xenium: cell_feature_matrix.h5 + cells.parquet | cells.csv.gz | cells.csv
-    if want("xenium") and "cell_feature_matrix.h5" in files:
-        cells = _first(files, "cells.parquet", "cells.csv.gz", "cells.csv")
-        if cells is not None:
-            return [Candidate("xenium", folder, {"matrix": files["cell_feature_matrix.h5"], "cells": cells}, did)], True, ignored
-        ignored.append({"path": _rel(files["cell_feature_matrix.h5"], root), "reason": "Xenium matrix without cells.parquet / cells.csv.gz"})
+    # Xenium: cell_feature_matrix.h5 + cells.parquet | cells.csv.gz | cells.csv, either as Xenium Onboard
+    # Analysis names them or with a per-sample prefix (<prefix>cell_feature_matrix.h5 + <prefix>cells.parquet,
+    # as 10x's downloads name them). Prefixes keep several samples apart in one folder, which is how a
+    # Pennsieve data source stages files (side by side, without the dataset's folders).
+    if want("xenium"):
+        # later suffixes win for the same prefix: parquet over csv.gz over csv
+        pairs = _pairs(files, ("cell_feature_matrix.h5",), ("cells.csv", "cells.csv.gz", "cells.parquet"))
+        if pairs:
+            out = []
+            for prefix, a, b in pairs:
+                prefix = prefix if prefix in _suffix_matches(files, "cell_feature_matrix.h5") else ""
+                tag = prefix.rstrip("_-.")
+                if len(pairs) == 1:
+                    sid = sanitise(tag) if tag and did == "sample" else did
+                else:
+                    sid = sanitise(f"{did}_{tag}") if did != "sample" else sanitise(tag)
+                c = Candidate("xenium", folder if len(pairs) == 1 else a, {"matrix": a, "cells": b}, sid)
+                c.prefix = tag
+                out.append(c)
+            return out, len(pairs) == 1 and not pairs[0][0], ignored
+        for n in sorted(_suffix_matches(files, "cell_feature_matrix.h5").values()):
+            ignored.append({"path": _rel(n, root), "reason": "Xenium matrix without cells.parquet / cells.csv.gz"})
 
     # MERSCOPE: *cell_by_gene.csv + *cell_metadata.csv
     if want("merscope"):
@@ -198,7 +215,9 @@ def detect_folder(folder: Path, dirnames: list[str], filenames: list[str], root:
             out = []
             for prefix, a, b in pairs:
                 sid = did if len(pairs) == 1 else sanitise(f"{did}_{prefix.rstrip('_')}")
-                out.append(Candidate("merscope", folder if len(pairs) == 1 else a, {"counts": a, "metadata": b}, sid))
+                c = Candidate("merscope", folder if len(pairs) == 1 else a, {"counts": a, "metadata": b}, sid)
+                c.prefix = prefix.rstrip("_-.")
+                out.append(c)
             return out, True, ignored
 
     # CosMx: *_exprMat_file.csv + *_metadata_file.csv
@@ -208,7 +227,9 @@ def detect_folder(folder: Path, dirnames: list[str], filenames: list[str], root:
             out = []
             for prefix, a, b in pairs:
                 sid = did if len(pairs) == 1 else sanitise(f"{did}_{prefix}")
-                out.append(Candidate("cosmx", folder if len(pairs) == 1 else a, {"counts": a, "metadata": b}, sid))
+                c = Candidate("cosmx", folder if len(pairs) == 1 else a, {"counts": a, "metadata": b}, sid)
+                c.prefix = prefix.rstrip("_-.")
+                out.append(c)
             return out, True, ignored
 
     # AnnData: *.h5ad with obsm["spatial"], one sample per file
@@ -326,7 +347,8 @@ def _norm(p: str) -> str:
 
 def path_matches(sheet_path: str, candidate: Candidate, root: Path) -> bool:
     """A sheet `path` names a sample when it equals, or ends, the sample's path relative to the input,
-    with or without a trailing outs/ folder, or its folder/file name."""
+    with or without a trailing outs/ folder, or its folder/file name, or (for samples whose files share a
+    folder) its file-name prefix, alone or after the folder's path."""
     want = _norm(sheet_path)
     if not want:
         return False
@@ -338,6 +360,10 @@ def path_matches(sheet_path: str, candidate: Candidate, root: Path) -> bool:
         forms.add(_norm(str(p)))
     for f in list(forms):
         forms.add(Path(f).name)
+    if candidate.prefix:
+        folder = Path(rel).parent if candidate.source.is_file() else Path(rel)
+        forms.add(candidate.prefix)
+        forms.add(_norm(str(folder / candidate.prefix)))
     return any(f == want or f.endswith("/" + want) for f in forms)
 
 

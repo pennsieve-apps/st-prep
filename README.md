@@ -60,7 +60,7 @@ Detection is by the files in each folder (one sample per folder, or per file for
 |---|---|---|---|
 | Visium (Space Ranger 1.x–3.x) | `filtered_feature_bc_matrix.h5` **or** the MTX folder `filtered_feature_bc_matrix/{barcodes,features,matrix}` (`.tsv.gz`/`.mtx.gz`), plus `spatial/tissue_positions.csv` (2.x, header) or `tissue_positions_list.csv` (1.x, no header) | Matrix (10x HDF5 with h5py, or MTX with SciPy), positions, `scalefactors_json.json`, `tissue_hires_image.png`, `tissue_lowres_image.png`. `raw_feature_bc_matrix*` is used only when there is no filtered matrix; `spatial_enrichment.csv`, `detected_tissue_image.jpg`, `aligned_fiducials.jpg` and other images are not read. | `spot` / pixel / `hex` |
 | Visium HD | `binned_outputs/square_<NNN>um/` with `filtered_feature_bc_matrix.h5` and `spatial/tissue_positions.parquet` | as Visium, for the `BIN_SIZE_UM` binning | `bin` / pixel / `square` |
-| Xenium | `cell_feature_matrix.h5` + `cells.parquet` (or `cells.csv.gz`) | Matrix, `x_centroid`/`y_centroid`, `cell_area`, `nucleus_area` (µm, µm²) | `cell` / micron / `none` |
+| Xenium | `cell_feature_matrix.h5` + `cells.parquet` (or `cells.csv.gz`), or the same with a per-sample prefix (`<sample>_cell_feature_matrix.h5` + `<sample>_cells.parquet`, as 10x's downloads name them) | Matrix, `x_centroid`/`y_centroid`, `cell_area`, `nucleus_area` (µm, µm²) | `cell` / micron / `none` |
 | MERSCOPE | `*cell_by_gene.csv` + `*cell_metadata.csv` | Counts (dense CSV → CSR in chunks), `center_x`/`center_y`, `volume` → `obs["cell_volume"]`, `fov` | `cell` / micron / `none` |
 | CosMx | `*_exprMat_file.csv` + `*_metadata_file.csv` | Counts, `CenterX_global_px`/`CenterY_global_px` × `COSMX_PIXEL_UM`, `Area` × `COSMX_PIXEL_UM`² → `cell_area`; cell ids from a `cell` column, else `<cell_ID>_<fov>` | `cell` / micron / `none` |
 | AnnData | `*.h5ad` with `obsm["spatial"]` | `layers["counts"]`, else integer-valued `X`, else integer `raw.X`; Ensembl `var_names` swapped for a symbol column (`feature_name`, `gene_symbols`, …); `uns["spatial"]` and an earlier `uns["pennsieve"]` kept; a file with several `obs["sample_id"]` values is split | from the file, else `cell` / micron |
@@ -195,3 +195,15 @@ Verified on Crossref / DataCite and PubMed (title, full author list, year); also
   (the 10x Genomics dataset page "Human Lymph Node").
 - **Xenium demo data files**: 10x Genomics, *FFPE Human Breast Cancer* (Xenium Onboard Analysis
   1.0.1, CC BY 4.0), files at https://cf.10xgenomics.com/samples/xenium/1.0.1/.
+
+## Files side by side (Pennsieve data sources)
+
+A Pennsieve data source stages the selected files side by side in one folder, without the dataset's
+folders, so several samples' files must have distinct names. Xenium, MERSCOPE and CosMx samples can be
+given with a per-sample file-name prefix (`breast_rep1_cell_feature_matrix.h5` +
+`breast_rep1_cells.parquet`, `run1_cell_by_gene.csv` + `run1_cell_metadata.csv`,
+`slide1_exprMat_file.csv` + `slide1_metadata_file.csv`); each prefix is one sample, and a sample
+sheet's `path` can name it (`breast_rep1`). Without a sheet the prefix is the sample id. Visium and
+Visium HD samples need their `spatial/` folder, so give them as AnnData `.h5ad` files (one per sample)
+or one sample per run when staged this way.
+

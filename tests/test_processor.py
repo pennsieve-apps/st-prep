@@ -424,3 +424,32 @@ def test_as_counts_float_and_int():
     assert X.dtype == np.int32 and not w
     X = C.as_counts(sp.csr_matrix(np.array([[1.5, 0], [2.0, 3.0]])), w)
     assert X.dtype == np.float32 and w
+
+
+def test_xenium_prefixed_files_side_by_side(tmp_path, monkeypatch):
+    """Two Xenium samples whose files sit in one folder with per-sample prefixes (10x's download names;
+    how a Pennsieve data source stages files, without the dataset's folders), named by prefix in the sheet."""
+    from tests.make_fixture import make_xenium
+
+    rng = np.random.default_rng(11)
+    flat = tmp_path / "in"
+    flat.mkdir()
+    planted = {}
+    for name in ("breast_rep1", "breast_rep2"):
+        d = tmp_path / name
+        planted[name] = make_xenium(d, rng, n=30 if name.endswith("1") else 20)
+        (d / "cell_feature_matrix.h5").rename(flat / f"{name}_cell_feature_matrix.h5")
+        (d / "cells.parquet").rename(flat / f"{name}_cells.parquet")
+    (flat / "samples.csv").write_text("sample_id,path,condition\nrep1,breast_rep1,a\nrep2,breast_rep2,b\n")
+    out = tmp_path / "out"
+    assert run(flat, out, monkeypatch) == 0
+    for sid, name, n in (("rep1", "breast_rep1", 30), ("rep2", "breast_rep2", 20)):
+        a = ad.read_h5ad(out / "spatial" / f"{sid}.h5ad")
+        assert a.n_obs == n and a.uns["pennsieve"]["platform"] == "xenium"
+        assert set(a.obs["condition"]) == {"a" if sid == "rep1" else "b"}
+        assert np.allclose(a.obs["control_counts"].to_numpy(), planted[name]["control_counts"])
+    # without a sample sheet the prefixes are the sample ids
+    (flat / "samples.csv").unlink()
+    out2 = tmp_path / "out2"
+    assert run(flat, out2, monkeypatch) == 0
+    assert sorted(p.stem for p in (out2 / "spatial").glob("*.h5ad")) == ["breast_rep1", "breast_rep2"]
