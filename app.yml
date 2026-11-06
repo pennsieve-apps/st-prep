@@ -90,6 +90,8 @@ outputs:
     mediaTypes:
       - application/json
       - application/x-hdf5; profile=anndata
+    formats:
+      - format_3590
   - name: metadata
     description: 'metadata/samples.csv (sample_id, path, platform, kind, n_obs, n_genes, n_obs_in_tissue and every extra sample sheet column), metadata/prep.json (per sample: platform, files read, features dropped by type with counts, observations dropped, coordinate unit, images, annotation join, warnings; samples skipped; files ignored), metadata/provenance.json.'
     mediaTypes:
